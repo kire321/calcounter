@@ -33,7 +33,7 @@ The client keeps one instance of `State`: `state`. When `state` changes, React u
 
 If the client cannot receive replies from the user (perhaps there is an internet connectivity problem), the user can still edit their local state. It can diverge arbitrarily from the server's state. When connectivity is reestablished, server changes will clobber all local changes. This is a bug, but fixing it is out of scope.
 
-If the client attempts an impossible operation (deleting a nonexistant item, creating two meals with the same timestamp, etc) the server doesn't perform the operation and sends the latest state with a status 200 OK. This would be a confusing public API, but for internal purposes is ok.
+If the client attempts an impossible operation (deleting a nonexistant item, creating two meals with the same id, etc) the server doesn't perform the operation and sends the latest state with a status 200 OK. This would be a confusing public API, but for internal purposes is ok.
 
 If the user makes two changes right after each other, the second change may briefly disappear from the UI, when the server has acknowledged the first change but not the second. The second change will reappear when the second ack is received. This is a bug, but fixing it is out of scope.
 
