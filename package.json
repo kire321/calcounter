@@ -6,6 +6,8 @@
     "start": "node --harmony main.js"
   },
   "dependencies": {
-    "koa": "*"
+    "koa": "*",
+	"wait.for-es6": "*",
+	"request": "*"
   }
 }
