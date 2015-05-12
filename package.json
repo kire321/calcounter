@@ -6,6 +6,6 @@
     "start": "node --harmony main.js"
   },
   "dependencies": {
-    "koa": "*",
+    "koa": "*"
   }
 }
