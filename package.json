@@ -14,7 +14,6 @@
     "koa-router": "*",
     "passport-facebook": "^2.0.0",
     "passport-http": "*",
-    "pm2": "*",
     "request": "*",
     "wait.for-es6": "*"
   }
