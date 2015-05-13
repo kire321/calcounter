@@ -8,6 +8,11 @@
   "dependencies": {
     "koa": "*",
 	"wait.for-es6": "*",
-	"request": "*"
+	"request": "*",
+	"koa-passport": "*",
+	"koa-generic-session": "*",
+	"koa-bodyparser": "*",
+	"koa-router": "*",
+	"passport-http": "*"
   }
 }
