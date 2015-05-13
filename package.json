@@ -3,10 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node --harmony main.js"
+    "start": "node --harmony main.js",
+    "test": "node --harmony test.js"
   },
   "dependencies": {
     "koa": "*",
+    "pm2": "*",
 	"wait.for-es6": "*",
 	"request": "*",
 	"koa-passport": "*",

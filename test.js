@@ -35,29 +35,35 @@ var server = new function() {
 	this.stop = function* () {
 		//This is ugly and fragile. Why don't child processes get the signals I
 		//send them?????
+		//use a process manager?
 		yield wait.for(exec, "ps a -o pid= -o args= | grep 'sh -c node --harmony main.js' | xargs | cut -d ' ' -f 1 | xargs kill -9");
 		yield wait.for(exec, "ps a -o pid= -o args= | grep 'node --harmony main.js' | xargs | cut -d ' ' -f 1 | xargs kill -9");
 	}
 }
 
-function* testHelloWorld() {
-	console.log("test");
+function* testUnauthorized() {
 	var response = yield wait.for(request.get, "http://localhost:8888") ;
-	debugger;
+	var body = response.body;
+	assert.equal(body, "Unauthorized");
+}
+
+function* testHelloWorld() {
+	var response = yield wait.for(request.get, "http://test:test@localhost:8888") ;
 	var body = response.body;
 	assert.equal(body, "Hello World");
 }
 
 function* runTests() {
-	yield wait.runGenerator(server.start);
+	yield* server.start();
 	var allPassed = true;
 	try {
-		wait.launchFiber(testHelloWorld);
+		yield* testUnauthorized();
+		yield* testHelloWorld();
 	} catch (error) {
 		allPassed = false;
 		throw error;
 	} finally {
-		yield wait.runGenerator(server.stop)
+		yield* server.stop()
 	}
 	if (allPassed) {
 		console.log("All tests passed.")
