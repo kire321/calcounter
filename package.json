@@ -8,13 +8,14 @@
   },
   "dependencies": {
     "koa": "*",
+    "koa-bodyparser": "*",
+    "koa-generic-session": "*",
+    "koa-passport": "*",
+    "koa-router": "*",
+    "passport-facebook": "^2.0.0",
+    "passport-http": "*",
     "pm2": "*",
-	"wait.for-es6": "*",
-	"request": "*",
-	"koa-passport": "*",
-	"koa-generic-session": "*",
-	"koa-bodyparser": "*",
-	"koa-router": "*",
-	"passport-http": "*"
+    "request": "*",
+    "wait.for-es6": "*"
   }
 }

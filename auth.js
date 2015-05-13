@@ -1,11 +1,8 @@
 var passport = require('koa-passport')
 var BasicStrategy = require('passport-http').BasicStrategy;
+var credentials = require('./credentials')
+var user = credentials.user
 
-	  //Is it worth making a hard-to-guess password and hiding in a
-	  //file that's not committed publicly? Probably not. We just need
-	  //to be sure that the test user has no special permissions, and
-	  //can only modify their own account.
-var user = { id: 1, username: 'test', password: 'test' }
 
 passport.serializeUser(function(user, done) {
   done(null, user.id)
@@ -27,15 +24,15 @@ passport.use(new BasicStrategy({
 ));
 
 
-//var FacebookStrategy = require('passport-facebook').Strategy
-//passport.use(new FacebookStrategy({
-//    clientID: 'your-client-id',
-//    clientSecret: 'your-secret',
-//    callbackURL: 'http://localhost:' + (process.env.PORT || 3000) + '/auth/facebook/callback'
-//  },
-//  function(token, tokenSecret, profile, done) {
-//    // retrieve user ...
-//    done(null, user)
-//  }
-//))
+var FacebookStrategy = require('passport-facebook').Strategy
+passport.use(new FacebookStrategy({
+    clientID: credentials.facebookClientID,
+    clientSecret: credentials.facebookClientSecret,
+	callbackURL: 'http://calcounter-dev.elasticbeanstalk.com/auth/facebook/callback'
+  },
+  function(token, tokenSecret, profile, done) {
+	console.log(profile);
+    done(null, user)
+  }
+))
 

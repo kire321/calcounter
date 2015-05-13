@@ -2,12 +2,7 @@ var wait=require('wait.for-es6');
 var request = require('request');
 var assert = require('assert');
 var exec = require('child_process').exec;
-
-function assertEqual(generator, left, right) {
-	if (left !== right) {
-		generator.throw(new Error(left + " != " + right));
-	}
-}
+var user = require('./credentials').user
 
 var server = new function() {
 
@@ -42,13 +37,13 @@ var server = new function() {
 }
 
 function* testUnauthorized() {
-	var response = yield wait.for(request.get, "http://localhost:8888") ;
+	var response = yield wait.for(request.get, "http://localhost:8888/api") ;
 	var body = response.body;
 	assert.equal(body, "Unauthorized");
 }
 
 function* testHelloWorld() {
-	var response = yield wait.for(request.get, "http://test:test@localhost:8888") ;
+	var response = yield wait.for(request.get, "http://" + user.username + ":" + user.password + "@localhost:8888/api") ;
 	var body = response.body;
 	assert.equal(body, "Hello World");
 }

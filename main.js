@@ -22,20 +22,20 @@ app.use(passport.session())
 // public routes
 var Router = require('koa-router')
 
-//var public = new Router()
+var public = new Router()
 
-//public.get('/auth/facebook',
-//  passport.authenticate('facebook')
-//)
-//
-//public.get('/auth/facebook/callback',
-//  passport.authenticate('facebook', {
-//    successRedirect: '/app',
-//    failureRedirect: '/'
-//  })
-//)
+public.get('/',
+  passport.authenticate('facebook')
+)
 
-//app.use(public.middleware())
+public.get('/auth/facebook/callback',
+  passport.authenticate('facebook', {
+    successRedirect: '/api', //should be a static page
+    failureRedirect: '/' //woohoo! a infinite loop
+  })
+)
+
+app.use(public.middleware())
 
 // Require authentication for now
 app.use(function*(next) {
@@ -56,7 +56,7 @@ app.use(function*(next) {
 
 var secured = new Router()
 
-secured.get('/', function*() {
+secured.get('/api', function*() {
   this.body = 'Hello World';
 })
 
