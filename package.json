@@ -12,6 +12,8 @@
     "koa-generic-session": "*",
     "koa-passport": "*",
     "koa-router": "*",
+    "koa-send": "^1.3.1",
+    "koa-static": "^1.4.9",
     "passport-facebook": "^2.0.0",
     "passport-http": "*",
     "request": "*",
