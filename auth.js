@@ -1,7 +1,7 @@
 var passport = require('koa-passport')
 var BasicStrategy = require('passport-http').BasicStrategy;
 var credentials = require('./credentials')
-var user = { id: 1, username: 'test', password: credentials.TEST_PASSWORD };
+var user = { id: 1, username: 'test', password: credentials["TEST-PASSWORD"] };
 
 
 passport.serializeUser(function(user, done) {
@@ -23,11 +23,11 @@ passport.use(new BasicStrategy({
   }
 ));
 
+var FacebookStrategy = require('passport-facebook').Strategy;
 debugger;
-var FacebookStrategy = require('passport-facebook').Strategy
 passport.use(new FacebookStrategy({
-    clientID: credentials.FB_CLIENT_ID,
-    clientSecret: credentials.FB_CLIENT_SECRET,
+    clientID: credentials["FB-CLIENT-ID"],
+    clientSecret: credentials["FB-CLIENT-SECRET"],
 	callbackURL: 'http://calcounter-dev.elasticbeanstalk.com/auth/facebook/callback'
   },
   function(token, tokenSecret, profile, done) {
