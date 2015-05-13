@@ -7,7 +7,6 @@ try {
 if (ebconfig) {
 	var configJSON = JSON.parse(ebconfig);
 	configJSON.option_settings.forEach(function (option) {
-		debugger;
 		exports[option.option_name] = option.value;
 	});
 } else {

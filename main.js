@@ -43,21 +43,15 @@ app.use(function*(next) {
   if (this.isAuthenticated()) {
     yield next
   } else {
-	  yield* passport.authenticate('basic', {session: false }, function*(err, user, info) {
-		if (err) throw err
-		if (user === false) {
-		  ctx.status = 401
-		} else {
-		  yield next
-		}
-	  }).call(this, next)
+	  yield* passport.authenticate('basic').call(this, next)
   }
 });
 
 var secured = new Router()
 
 secured.get('/api', function*() {
-  this.body = 'Hello World';
+	debugger;
+  this.body = 'Hello ' + this.req.user.id;
 })
 
 app.use(secured.middleware())

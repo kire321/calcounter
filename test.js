@@ -45,7 +45,7 @@ function* testUnauthorized() {
 function* testHelloWorld() {
 	var response = yield wait.for(request.get, "http://test:" + credentials["TEST-PASSWORD"] + "@localhost:8888/api") ;
 	var body = response.body;
-	assert.equal(body, "Hello World");
+	assert.equal(body, "Hello 1");
 }
 
 function* runTests() {
