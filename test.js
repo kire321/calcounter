@@ -37,15 +37,20 @@ var server = new function() {
 }
 
 function* testUnauthorized() {
-	var response = yield wait.for(request.get, "http://localhost:8888/api") ;
+	var response = yield wait.for(request.post, "http://localhost:8888/api") ;
 	var body = response.body;
 	assert.equal(body, "Unauthorized");
 }
 
 function* testHelloWorld() {
-	var response = yield wait.for(request.get, "http://test:" + credentials["TEST-PASSWORD"] + "@localhost:8888/api") ;
-	var body = response.body;
-	assert.equal(body, "Hello 1");
+	var response = yield wait.for(request.post, "http://test:" + credentials["TEST-PASSWORD"] + "@localhost:8888/api") ;
+	var body = null;
+	try {
+		body = JSON.parse(response.body);
+	} catch (error) {
+		body = response.body
+	}
+	assert.deepEqual(body, {targetCalories: 1000});
 }
 
 function* runTests() {

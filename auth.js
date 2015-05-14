@@ -1,24 +1,32 @@
+var Q = require('q')
+var User = require('./dynamo').User
 var passport = require('koa-passport')
 var BasicStrategy = require('passport-http').BasicStrategy;
 var credentials = require('./credentials')
-var testUser = { id: 1, username: 'test', password: credentials["TEST-PASSWORD"] };
 
 passport.serializeUser(function(user, done) {
-	debugger;
   done(null, user.id)
 })
 
-passport.deserializeUser(function(id, done) {
-  done(null, { id : id } )
-})
+var deserializeUser = function(id, done) {
+	var getUser = Q.async(User.get);
+	debugger;
+    getUser(id).then(function(user) {
+	  done(null, user);
+  }, function(error) {
+	  done(error);
+  });
+};
+
+passport.deserializeUser(deserializeUser);
 
 passport.use(new BasicStrategy({
   },
   function(username, password, done) {
-	if (username === testUser.username && password === testUser.password) {
-		return done(null, testUser);
+	if (username === "test" && password === credentials["TEST-PASSWORD"]) {
+		deserializeUser(1, done);
 	} else {
-	    return done(null, false);
+	    done(null, false);
 	}
   }
 ));

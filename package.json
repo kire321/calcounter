@@ -16,6 +16,7 @@
     "koa-static": "^1.4.9",
     "passport-facebook": "^2.0.0",
     "passport-http": "*",
+    "q": "^1.4.0",
     "request": "*",
     "wait.for-es6": "*"
   }

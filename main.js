@@ -48,7 +48,6 @@ app.use(public.middleware())
 
 // Require authentication for now
 app.use(function*(next) {
-	debugger;
   var ctx = this
   if (this.isAuthenticated()) {
     yield next
@@ -59,9 +58,9 @@ app.use(function*(next) {
 
 var secured = new Router()
 
-secured.get('/api', function*() {
-	debugger;
-  this.body = 'Hello ' + this.req.user.id;
+var dynamo = require('./dynamo')
+secured.post('/api', function* () {
+	yield* dynamo.api(this);
 })
 
 app.use(secured.middleware())
