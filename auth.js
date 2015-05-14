@@ -38,8 +38,7 @@ passport.use(new FacebookStrategy({
 	callbackURL: 'http://calcounter-dev.elasticbeanstalk.com/auth/facebook/callback'
   },
   function(token, tokenSecret, profile, done) {
-	var fbUser = { id: profile.id }
-    done(null, user)
+	deserializeUser(profile.id, done);
   }
 ))
 

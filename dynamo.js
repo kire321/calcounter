@@ -15,7 +15,13 @@ exports.User = (function() {
 	var mockDB = {1: new User(1, 1000)};
 
 	User.get = function* (id) {
-		return mockDB[id];
+		try {
+			return mockDB[id];
+		} catch (error) {
+			var user = new User(id, 1000);
+			mockDB[id] = user;
+			return user;
+		}
 	};
 
 	return User;
