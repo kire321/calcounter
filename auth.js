@@ -5,6 +5,7 @@ var BasicStrategy = require('passport-http').BasicStrategy;
 var credentials = require('./credentials')
 
 passport.serializeUser(function(user, done) {
+	debugger;
   done(null, user.id)
 })
 

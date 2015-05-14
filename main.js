@@ -28,10 +28,10 @@ var Router = require('koa-router')
 var public = new Router()
 
 var send = require('koa-send');
-public.get('/', function* () {
+public.get('/', function* (next) {
 	debugger;
-  if (this.isAuthenticated) {
-	  yield send(this, __dirname + '/static/index.html');
+  if (this.isAuthenticated()) {
+	  yield send(this, __dirname + '/index.html');
   } else {
 	  yield* passport.authenticate('facebook').call(this, next)
   }
@@ -48,11 +48,14 @@ app.use(public.middleware())
 
 // Require authentication for now
 app.use(function*(next) {
-  var ctx = this
   if (this.isAuthenticated()) {
     yield next
   } else {
-	  yield* passport.authenticate('basic').call(this, next)
+	  //if ('authorization' in this.request.headers) {
+		  yield* passport.authenticate('basic').call(this, next)
+	  //} else {
+	  //    yield* passport.authenticate('facebook').call(this, next)
+	  //}
   }
 });
 

@@ -22,17 +22,14 @@ exports.User = (function() {
 })();
 
 exports.api = Q.async(function *(user, body) {
-	console.log(body);
 	if ("update" in body) {
 		var update = body.update;
 		if ("targetCalories" in update) {
-			console.log("setting calories");
 			yield* user.setTargetCalories(update.targetCalories);
 		} else {
 			console.trace("unknown update operation");
 		}
 	}
 
-	console.log(user.targetCalories);
 	return {targetCalories: user.targetCalories};
 });
