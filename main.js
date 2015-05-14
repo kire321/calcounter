@@ -60,7 +60,9 @@ var secured = new Router()
 
 var dynamo = require('./dynamo')
 secured.post('/api', function* () {
-	yield* dynamo.api(this);
+	var promise = dynamo.api(this.req.user, this.request.body);
+	promise.done();
+	this.body = yield promise;
 })
 
 app.use(secured.middleware())

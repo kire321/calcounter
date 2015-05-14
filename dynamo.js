@@ -1,3 +1,5 @@
+var Q = require('q');
+
 exports.User = (function() {
 
 	function User(id, targetCalories) {
@@ -19,7 +21,6 @@ exports.User = (function() {
 	return User;
 })();
 
-exports.api = function* (ctx) {
-	debugger;
-	ctx.body = {targetCalories: ctx.req.user.targetCalories};
-}
+exports.api = Q.async(function *(user, body) {
+	return {targetCalories: user.targetCalories};
+});

@@ -10,7 +10,6 @@ passport.serializeUser(function(user, done) {
 
 var deserializeUser = function(id, done) {
 	var getUser = Q.async(User.get);
-	debugger;
     getUser(id).then(function(user) {
 	  done(null, user);
   }, function(error) {
