@@ -32,7 +32,6 @@ public.get('/', function* (next) {
   if (this.isAuthenticated()) {
 	  yield send(this, __dirname + '/index.html');
   } else {
-	  console.log("starting fb auth");
 	  yield* passport.authenticate('facebook').call(this, next)
   }
 })
@@ -40,7 +39,7 @@ public.get('/', function* (next) {
 public.get('/auth/facebook/callback',
   passport.authenticate('facebook', {
     successRedirect: '/',
-    failureRedirect: '/static/auth_failed.html'
+    failureRedirect: '/auth_failed.html'
   })
 )
 

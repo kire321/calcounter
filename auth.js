@@ -12,8 +12,10 @@ passport.serializeUser(function(user, done) {
 var deserializeUser = function(id, done) {
 	var getUser = Q.async(User.get);
     getUser(id).then(function(user) {
+	  console.log("du success");
 	  done(null, user);
   }, function(error) {
+	  console.log("du error " + error);
 	  done(error);
   });
 };
@@ -32,12 +34,15 @@ passport.use(new BasicStrategy({
 ));
 
 var FacebookStrategy = require('passport-facebook').Strategy;
+console.log(credentials["FB-CLIENT-ID"]);
+console.log(credentials["FB-CLIENT-SECRET"]);
 passport.use(new FacebookStrategy({
     clientID: credentials["FB-CLIENT-ID"],
     clientSecret: credentials["FB-CLIENT-SECRET"],
 	callbackURL: 'http://calcounter-dev.elasticbeanstalk.com/auth/facebook/callback'
   },
   function(token, tokenSecret, profile, done) {
+	  console.log("got cb from fb");
 	deserializeUser(profile.id, done);
   }
 ))
