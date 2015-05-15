@@ -1,12 +1,16 @@
+
+
 var Content = React.createClass({displayName: 'Content',
   getInitialState: function() {
       return {targetCalories: 2000};
   },
-  componentDidMount: function() {
+  syncWithServer: function(body) {
     $.ajax({
       url: 'api',
 	  type: "POST",
-      dataType: 'json',
+	  processData: false,
+      contentType: 'application/json',
+	  data: JSON.stringify(body),
       cache: false,
       success: function(data) {
         this.setState(data);
@@ -16,9 +20,22 @@ var Content = React.createClass({displayName: 'Content',
       }.bind(this)
     });
   },
+  componentDidMount: function() {
+	  this.syncWithServer();
+	  setInterval(this.syncWithServer, 2000);
+  },
+  onTargetCalorieChange: function(event) {
+	  var targetCalories = event.target.value;
+	  this.setState({targetCalories: targetCalories});
+	  this.syncWithServer({
+	  	update: {
+	  		targetCalories: targetCalories
+	  	}
+	  });
+  },
   render: function() {
     return (
-      <input type="number" name="targetCalories" min="100" max="10000" value={this.state.targetCalories} />
+      <input type="number" ref="targetCalories" name="targetCalories" value={this.state.targetCalories} onChange={this.onTargetCalorieChange} />
     );
   }
 });
