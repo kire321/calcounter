@@ -62,7 +62,7 @@ function* unauthorizedRequestsAreDenied() {
 var makeAuthenticatedRequest = promisify(function* (requestBody) {
 	var requestSpecs = {
 	  headers: {'content-type' : 'application/json'},
-	  url:	"http://test:" + config["TEST-PASSWORD"] + "@" + config.host + "/api",
+	  url:	"http://test:" + config.TEST_PASSWORD + "@" + config.host + "/api",
 	  body: JSON.stringify(requestBody)
 	}
 	var response = yield post(requestSpecs);
@@ -75,15 +75,20 @@ var makeAuthenticatedRequest = promisify(function* (requestBody) {
 	return body;
 });
 
+function randomInt (low, high) {
+    return Math.floor(Math.random() * (high - low) + low);
+}
+
 function* targetCalorieChangesArePersisted() {
+	var targetCalories = randomInt(1000, 3000);
 	var response = yield makeAuthenticatedRequest({
 		update: {
-			targetCalories: 1500
+			targetCalories: targetCalories
 		}
 	});
-	assert.deepEqual(response, {targetCalories: 1500});
+	assert.deepEqual(response, {targetCalories: targetCalories});
 	response = yield makeAuthenticatedRequest();
-	assert.deepEqual(response, {targetCalories: 1500});
+	assert.deepEqual(response, {targetCalories: targetCalories});
 }
 
 function* runTests() {

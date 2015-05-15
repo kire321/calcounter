@@ -22,7 +22,7 @@ passport.deserializeUser(deserializeUser);
 passport.use(new BasicStrategy({
   },
   function(username, password, done) {
-	if (username === "test" && password === config["TEST-PASSWORD"]) {
+	if (username === "test" && password === config.TEST_PASSWORD) {
 		deserializeUser(1, done);
 	} else {
 	    done(null, false);
@@ -32,8 +32,8 @@ passport.use(new BasicStrategy({
 
 var FacebookStrategy = require('passport-facebook').Strategy;
 passport.use(new FacebookStrategy({
-    clientID: config["FB-CLIENT-ID"],
-    clientSecret: config["FB-CLIENT-SECRET"],
+    clientID: config.FB_CLIENT_ID,
+    clientSecret: config.FB_CLIENT_SECRET,
 	callbackURL: 'http://' + config.host + '/auth/facebook/callback'
   },
   function(token, tokenSecret, profile, done) {

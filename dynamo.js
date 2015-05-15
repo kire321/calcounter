@@ -1,4 +1,39 @@
+var promisify = require('./util').promisify;
 var Q = require('q');
+
+var Table = (function() {
+	var AWS = require('aws-sdk');
+	AWS.config.region = 'eu-central-1';
+	var dynamodb = new AWS.DynamoDB();
+
+	function Table(tableName, pkName) {
+		function createParams(key) {
+			var keyObj = {};
+			keyObj[pkName] = {N: key.toString()};
+			return {
+				TableName: tableName,
+				Key: keyObj, 
+			};
+		};
+		this.get = Q.denodeify(function(key, callback) {
+			var params = createParams(key);
+			params.ConsistentRead = true;
+			dynamodb.getItem(params, callback);
+		});
+		this.put = Q.denodeify(function(key, field, value, callback) {
+			var params = createParams(key);
+			params.UpdateExpression = "set " + field + " = :value";
+			params.ExpressionAttributeValues = {
+				":value": {
+					"N": value.toString()
+				}
+			};
+			console.log(params.UpdateExpression);
+			dynamodb.updateItem(params, callback);
+		});
+	}
+	return Table;
+})();
 
 exports.User = (function() {
 
@@ -8,25 +43,29 @@ exports.User = (function() {
 		this.targetCalories = targetCalories;
 		this.setTargetCalories = function* (newTargetCalories) {
 			self.targetCalories = newTargetCalories;
-			mockDB[self.id] = new User(self.id, self.targetCalories);
+			yield userDataTable.put(self.id, "targetCalories", self.targetCalories);
 		};
 	}
 
-	var mockDB = {1: new User(1, 1000)};
-
+	var userDataTable = new Table("calCounterUserData", "id");
 	User.get = function* (id) {
-		var user = mockDB[id];
-		if (!user) {
-			user = new User(id, 1000);
-			mockDB[id] = user;
+		var response = yield userDataTable.get(id);
+		console.log(response);
+		if (response.Item) {
+			console.log("fetched a user");
+			return new User(parseInt(response.Item.id.N), parseInt(response.Item.targetCalories.N));
+		} else {
+			console.log("created a user");
+			var user = new User(id, 1000);
+			yield userDataTable.put(user.id, "targetCalories", user.targetCalories);
+			return user;
 		}
-		return user;
 	};
 
 	return User;
 })();
 
-exports.api = Q.async(function *(user, body) {
+exports.api = promisify(function *(user, body) {
 	if ("update" in body) {
 		var update = body.update;
 		if ("targetCalories" in update) {
