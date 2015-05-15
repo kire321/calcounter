@@ -71,4 +71,5 @@ app.use(secured.middleware())
 
 // start server
 console.log("Listening...");
-app.listen(process.env.PORT || 8888);
+var config = require("./config");
+app.listen(config.port);

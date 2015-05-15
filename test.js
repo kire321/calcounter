@@ -3,7 +3,7 @@ var request = require('request');
 var assert = require('assert');
 var exec = require('child_process').exec
 var execAndWait = Q.denodeify(exec);
-var credentials = require('./credentials')
+var config = require('./config')
 var promisify = require('./util').promisify
 
 var server = new function() {
@@ -62,7 +62,7 @@ function* unauthorizedRequestsAreDenied() {
 var makeAuthenticatedRequest = promisify(function* (requestBody) {
 	var requestSpecs = {
 	  headers: {'content-type' : 'application/json'},
-	  url:	"http://test:" + credentials["TEST-PASSWORD"] + "@localhost:8888/api",
+	  url:	"http://test:" + config["TEST-PASSWORD"] + "@" + config.host + "/api",
 	  body: JSON.stringify(requestBody)
 	}
 	var response = yield post(requestSpecs);

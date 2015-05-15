@@ -7,6 +7,7 @@ exports.User = (function() {
 		this.id = id;
 		this.targetCalories = targetCalories;
 		this.setTargetCalories = function* (newTargetCalories) {
+			console.log("db " + self.id + " setTargetCalories");
 			self.targetCalories = newTargetCalories;
 			mockDB[self.id] = new User(self.id, self.targetCalories);
 		};
@@ -15,15 +16,13 @@ exports.User = (function() {
 	var mockDB = {1: new User(1, 1000)};
 
 	User.get = function* (id) {
-		console.log("getting user " + id);
-		try {
-			return mockDB[id];
-		} catch (error) {
-			console.log("user doesn't exist");
-			var user = new User(id, 1000);
+		console.log("db " + id + "  get user");
+		var user = mockDB[id];
+		if (!user) {
+			user = new User(id, 1000);
 			mockDB[id] = user;
-			return user;
 		}
+		return user;
 	};
 
 	return User;
