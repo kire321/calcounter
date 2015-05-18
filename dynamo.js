@@ -28,7 +28,6 @@ var Table = (function() {
 					"N": value.toString()
 				}
 			};
-			console.log(params.UpdateExpression);
 			dynamodb.updateItem(params, callback);
 		});
 	}
@@ -50,12 +49,9 @@ exports.User = (function() {
 	var userDataTable = new Table("calCounterUserData", "id");
 	User.get = function* (id) {
 		var response = yield userDataTable.get(id);
-		console.log(response);
 		if (response.Item) {
-			console.log("fetched a user");
 			return new User(parseInt(response.Item.id.N), parseInt(response.Item.targetCalories.N));
 		} else {
-			console.log("created a user");
 			var user = new User(id, 1000);
 			yield userDataTable.put(user.id, "targetCalories", user.targetCalories);
 			return user;
@@ -69,7 +65,11 @@ exports.api = promisify(function *(user, body) {
 	if ("update" in body) {
 		var update = body.update;
 		if ("targetCalories" in update) {
-			yield* user.setTargetCalories(update.targetCalories);
+			if (parseInt(update.targetCalories)) {
+				yield* user.setTargetCalories(update.targetCalories);
+			} else {
+				console.trace("targetCalories must be a nonzero int");
+			}
 		} else {
 			console.trace("unknown update operation");
 		}

@@ -50,11 +50,12 @@ app.use(function*(next) {
   if (this.isAuthenticated()) {
     yield next
   } else {
-	  //if ('authorization' in this.request.headers) {
+	  if ('authorization' in this.request.headers) {
 		  yield* passport.authenticate('basic').call(this, next)
-	  //} else {
-	  //    yield* passport.authenticate('facebook').call(this, next)
-	  //}
+	  } else {
+		  this.response.status = 401;
+		  this.response.body = "Unauthorized";
+	  }
   }
 });
 
