@@ -119,6 +119,17 @@ function* canCreateMeal() {
 	assertEqualByFields(response.meals[0], meal, fields);
 }
 
+function* canStoreEmptyStrings() {
+	yield* deleteAllMeals();
+	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"", calories:1000}));
+	var response = yield makeAuthenticatedRequest({
+		upserts: [
+			meal
+		]
+	});
+	assert.equal(response.meals[0].description, meal.description);
+}
+
 function* runTests() {
 	yield* server.start();
 	var allPassed = true;
@@ -126,6 +137,7 @@ function* runTests() {
 		yield* unauthorizedRequestsAreDenied();
 		yield* canChangeTargetCalories();
 		yield* canCreateMeal();
+		yield* canStoreEmptyStrings();
 	} catch (error) {
 		allPassed = false;
 		throw error;

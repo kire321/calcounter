@@ -1,3 +1,26 @@
+function randomInt(low, high) {
+    return Math.floor(Math.random() * (high - low) + low);
+}
+
+var Meal = React.createClass({
+	render: function () {
+		var meal = this.props.meal;
+		var time = (new Date(0, 0, meal.date, 0, 0, meal.time)).toString()
+		return (
+			<div className="meal" key={meal.mealID}>
+				<b> At </b> {time} <b> I ate </b>
+				<input type="text" ref="description" name="description" value={meal.description} onChange={this.props.onDescriptionChange} />
+				<b> which had </b>
+				<input type="number" ref="calories" name="calories" value={meal.calories} onChange={this.props.onCaloriesChange} />
+				<b> calories. </b>
+			  <button type="button" onClick={this.props.onDelete}>Delete</button> 
+				<br />
+			</div>
+			)
+	}
+});
+
+
 var Content = React.createClass({
   displayName: 'Content',
 	//This boolean is a sort of write permission lock
@@ -12,19 +35,22 @@ var Content = React.createClass({
 	//we're not building google docs. We don't care what happens if
 	//somebody edits their data from two different tabs, switching
 	//back and forth more than every two seconds.
-  stateChanged: false,
+  stateChanges: {},
   getInitialState: function() {
-      return {targetCalories: 2000};
+      return {
+		  targetCalories: 2000,
+		  meals: [ ]
+	  };
   },
   syncWithServer: function() {
-	var body = {};
-	if (this.stateChanged) {
-		body = {
-			update: {
-				targetCalories: this.state.targetCalories
-			}
-		};
-		this.stateChanged = false;
+	var body = this.stateChanges;
+	this.stateChanges = {};
+	if (body.upserts) {
+		body.upserts = [];
+		for (var id in this.upserts) {
+			body.upserts.push(this.upserts[id]);
+		}
+		this.upserts = {};
 	}
     $.ajax({
       url: 'api',
@@ -48,16 +74,86 @@ var Content = React.createClass({
 	  this.syncWithServer();
 	  setInterval(this.syncWithServer, 2000);
   },
+	onChangeFactory: function (meal, attr) {
+		var self = this;
+		return function (event) {
+			meal[attr] = event.target.value;
+			self.upsert(meal);
+			self.setState(self.state);
+		};
+	},
+
+
   onTargetCalorieChange: function(event) {
 	  var targetCalories = event.target.value;
 	  if (parseInt(targetCalories)) {
-		  this.setState({targetCalories: targetCalories});
-		  this.stateChanged = true;
+		  this.state.targetCalories = targetCalories;
+		  this.stateChanges.targetCalories = targetCalories;
+		  this.setState(this.state);
 	  }
   },
+  upserts: {},
+	//keep only the last upsert for each id
+  upsert: function(meal) {
+	this.stateChanges.upserts = true;
+	this.upserts[meal.id] = meal;
+  },
+  createMeal: function() {
+	  var timestamp = Math.floor(Date.now() / 1000); 
+	  //if somebody updates their calories during a leap second we're
+	  //screwed
+	  var oneDay = 60 * 60 * 24;
+	  var date = Math.floor(timestamp / oneDay);
+	  var time = timestamp - (date * oneDay);
+	  var meal = {
+		  mealID: randomInt(0, 1000000),
+		  date: date,
+		  time: time,
+		  description: "",
+		  calories: 1000
+	  };
+	  this.state.meals.push(meal);
+	  this.upsert(meal);
+	  this.setState(this.state);
+  },
+  onDeleteFactory: function(meal) {
+	  var self = this;
+	  return function() {
+		  if (!self.stateChanges.deletes) {
+			  self.stateChanges.deletes = [];
+		  }
+		  self.stateChanges.deletes.push(meal.mealID);
+		 var index = self.state.meals.indexOf(meal); 
+		if (index > -1) {
+			self.state.meals.splice(index, 1);
+		}
+		self.setState(self.state);
+	  };
+  },
   render: function() {
+	  var self = this;
+	var meals = this.state.meals.map(function (meal) {
+		var onDescriptionChange = self.onChangeFactory(meal, "description");
+		var onCaloriesChange = self.onChangeFactory(meal, "calories");
+		var onDelete = self.onDeleteFactory(meal);
+		return (
+			<Meal meal={meal} onDescriptionChange={onDescriptionChange} onCaloriesChange={onCaloriesChange} onDelete={onDelete} />
+			);
+	});
     return (
-      <input type="number" ref="targetCalories" name="targetCalories" value={this.state.targetCalories} onChange={this.onTargetCalorieChange} />
+	  <div className="content">
+		  <div className="header">
+			  <div className="targetCalories">
+				  Daily target calories:
+				  <input type="number" ref="targetCalories" name="targetCalories" value={this.state.targetCalories} onChange={this.onTargetCalorieChange} />
+				  <br />
+			  </div>
+			  <button type="button" onClick={this.createMeal}>New Meal</button> 
+		  </div>
+		  <div className="meals">
+			{meals}
+		  </div>
+	  </div> 
     );
   }
 });

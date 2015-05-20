@@ -11,8 +11,11 @@ function modelFactory(keyFields, fields, tableName) {
 			for (var field in fields) {
 				if (!fieldsToInclude || fieldsToInclude.indexOf(field) >= 0) {
 					var type = fields[field];
-					dynamoObject[field] = {};
-					dynamoObject[field][type] = this[field].toString();
+					var string = this[field].toString();
+					if (string) {
+						dynamoObject[field] = {};
+						dynamoObject[field][type] = string;
+					}
 				}
 			}
 			return dynamoObject;
@@ -28,12 +31,22 @@ function modelFactory(keyFields, fields, tableName) {
 			return null;
 		}
 		var standardObject = {};
-		for (var field in awsObject) {
+		for (var field in fields) {
 			var typeValue = awsObject[field];
-			var type = Object.keys(typeValue)[0];
-			var value = typeValue[type];
-			if (type === 'N') {
-				value = parseInt(value);
+			var type = fields[field];
+			var value = null;
+			if (typeValue) {
+				value = typeValue[type];
+				if (type === 'N') {
+					value = parseInt(value);
+				}
+			} else {
+				if (type === 'S') {
+					value = "";
+				} else {
+					debugger;
+					console.trace("Warning: missing data from dynamo");
+				}
 			}
 			standardObject[field] = value;
 		}
