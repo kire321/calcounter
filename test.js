@@ -88,16 +88,35 @@ function* canChangeTargetCalories() {
 	assert.deepEqual(response.targetCalories, targetCalories);
 }
 
+function* deleteAllMeals() {
+	var meals = (yield makeAuthenticatedRequest()).meals;
+	var deletes = meals.map(function (meal) {
+		return meal.mealID;
+	});
+	var response = yield makeAuthenticatedRequest({
+		deletes: deletes
+	});
+	assert.deepEqual(response.meals, []);
+}
+
+function assertEqualByFields(left, right, fields) {
+	fields.forEach(function (field) {
+		assert.deepEqual(left[field], right[field]);
+	});
+}
+
 function* canCreateMeal() {
+	yield* deleteAllMeals();
 	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"foo", calories:1000}));
 	var response = yield makeAuthenticatedRequest({
 		upserts: [
 			meal
 		]
 	});
-	assert.deepEqual(response.meals, [meal]);
+	var fields = ["mealID", "date", "time", "description", "calories"];
+	assertEqualByFields(response.meals[0], meal, fields);
 	response = yield makeAuthenticatedRequest();
-	assert.deepEqual(response.meals, [meal]);
+	assertEqualByFields(response.meals[0], meal, fields);
 }
 
 function* runTests() {

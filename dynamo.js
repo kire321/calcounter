@@ -62,6 +62,13 @@ var Table = (function() {
 			var response = yield Q.nbind(dynamodb.getItem, dynamodb)(params);
 			return Model.fromDyanmoObject(response.Item);
 		});
+		this.delete = Q.denodeify(function(key, callback) {
+			var params = {
+				TableName: Model.tableName,
+				Key: key, 
+			};
+			dynamodb.deleteItem(params, callback);
+		});
 		this.put = Q.denodeify(function(object, callback) {
 			var params = {
 				TableName: Model.tableName,
@@ -112,7 +119,11 @@ exports.User = (function() {
 	User.prototype.putMeal = function* (meal) {
 		meal.userID = this.id;
 		yield userDataTable.put(meal);
-	}
+	};
+	User.prototype.deleteMeal = function* (id) {
+		var meal = new exports.Meal({userID: this.id, mealID: id});
+		yield userDataTable.delete(meal.getKey());
+	};
 
 	//usually async methods that return a value use a closure to
 	//access `self`, but we moved the closure we need to
@@ -154,8 +165,12 @@ exports.api = promisify(function *(user, body) {
 	}
 	if ("upserts" in body && body.upserts.constructor === Array) {
 		for(var i=0; i<body.upserts.length; i++) {
-			debugger;
 			yield* user.putMeal(new exports.Meal(body.upserts[i]));
+		}
+	}
+	if ("deletes" in body && body.deletes.constructor === Array) {
+		for(var i=0; i<body.deletes.length; i++) {
+			yield* user.deleteMeal(body.deletes[i]);
 		}
 	}
 	var meals = yield exports.User.getMeals(user.id);
