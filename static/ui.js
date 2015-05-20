@@ -60,7 +60,7 @@ var Content = React.createClass({
 	  data: JSON.stringify(body),
       cache: false,
       success: function(data) {
-		if (!this.stateChanged) {
+		if (Object.keys(this.stateChanges).length === 0) {
 			//User is not active here, server state wins
 			this.setState(data);
 		}
