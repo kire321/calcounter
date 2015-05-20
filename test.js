@@ -89,7 +89,7 @@ function* canChangeTargetCalories() {
 }
 
 function* canCreateMeal() {
-	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"foo", calories:1000})).preserialize();
+	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"foo", calories:1000}));
 	var response = yield makeAuthenticatedRequest({
 		upserts: [
 			meal
@@ -119,4 +119,5 @@ function* runTests() {
 }
 
 //Q.spawn(canCreateMeal);
+//Q.spawn(canChangeTargetCalories);
 Q.spawn(runTests);

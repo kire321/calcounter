@@ -1,6 +1,50 @@
 var promisify = require('./util').promisify;
 var Q = require('q');
 
+function modelFactory(keyFields, fields, tableName) {
+	function model(args) {
+		for (attr in fields) {
+			this[attr] = args[attr];
+		}
+		this.toDynamoObject = function(fieldsToInclude) {
+			var dynamoObject = {};
+			for (var field in fields) {
+				if (!fieldsToInclude || fieldsToInclude.indexOf(field) >= 0) {
+					var type = fields[field];
+					dynamoObject[field] = {};
+					dynamoObject[field][type] = this[field].toString();
+				}
+			}
+			return dynamoObject;
+		}
+		this.getKey = function() {
+			return this.toDynamoObject(keyFields)
+		};
+	}
+
+	model.tableName = tableName;
+	model.fromDyanmoObject = function(awsObject) {
+		if (!awsObject) {
+			return null;
+		}
+		var standardObject = {};
+		for (var field in awsObject) {
+			var typeValue = awsObject[field];
+			var type = Object.keys(typeValue)[0];
+			var value = typeValue[type];
+			if (type === 'N') {
+				value = parseInt(value);
+			}
+			standardObject[field] = value;
+		}
+		return new model(standardObject);
+	};
+
+	return model;
+}
+
+
+
 var Table = (function() {
 
 	var AWS = require('aws-sdk');
@@ -16,139 +60,75 @@ var Table = (function() {
 				ConsistentRead: true
 			};
 			var response = yield Q.nbind(dynamodb.getItem, dynamodb)(params);
-			return self.standardizeAWSObject(response.Item);
+			return Model.fromDyanmoObject(response.Item);
 		});
 		this.put = Q.denodeify(function(object, callback) {
 			var params = {
 				TableName: Model.tableName,
-				Item: object.getKey(), 
+				Item: object.toDynamoObject(), 
 			};
-			var i = 0;
-			for (field in object.fields) {
-				params.Item[field] = {};
-				params.Item[field][object.fields[field]] = object[field].toString();
-			}
 			dynamodb.putItem(params, callback);
 		});
 		this.query = promisify(function* (extraParams) {
 			var params = {
-				TableName: "calCounterUserData",
+				TableName: Model.tableName,
 				ConsistentRead: true
 			};
 			for (var key in extraParams) {
 				params[key] = extraParams[key];
 			}
 			var response = yield Q.nbind(dynamodb.query, dynamodb)(params);
-			console.log("query response");
-			console.log(response);
-			return response.Items.map(self.standardizeAWSObject);
+			return response.Items.map(Model.fromDyanmoObject);
 		});
-
-		this.standardizeAWSObject = function(awsObject) {
-			if (!awsObject) {
-				return null;
-			}
-			var standardObject = {};
-			for (var field in awsObject) {
-				var typeValue = awsObject[field];
-				var type = Object.keys(typeValue)[0];
-				var value = typeValue[type];
-				if (type === 'N') {
-					value = parseInt(value);
-				}
-				standardObject[field] = value;
-			}
-			return new Model(standardObject);
-		};
 	}
 	return Table;
 })();
 
-exports.Meal = (function () {
-	var attributes = [
-		"mealID",
-		"date",
-		"time",
-		"description",
-		"calories"
-	];
-
-	var Meal = function(args) {
-		debugger;
-		var self = this;
-		attributes.forEach(function (attr) {
-			self[attr] = args[attr];
-		});
-		this.getKey = function () {
-			return {
-				userID: {
-					N: self.userID.toString()
-				},
-				mealID: {
-					N: self.mealID.toString()
-				}
-			}
-		};
-		this.fields = {
+exports.Meal = modelFactory([
+		"userID", "mealID"
+		], {
+			mealID: "N",
+			userID: "N",
 			date: "N",
 			time: "N",
 			description: "S",
 			calories: "N"
-		};
-		this.preserialize = function () {
-			var smaller = {};
-			attributes.forEach(function (attr) {
-				smaller[attr] = self[attr];
-			});
-			return smaller;
-		};
-	};
-
-	Meal.tableName = "calCounterUserData";
-
-	return Meal
-})();
+		},  "calCounterUserData");
 
 exports.User = (function() {
 
-	function User(args) {
-		var self = this;
-		this.id = args.id;
-		this.targetCalories = args.targetCalories;
-		this.getKey = function () {
-			return {
-				id: {
-					N: self.id.toString()
-				}
-			};
-		};
-		this.fields = {
-			targetCalories: "N"
-		};
-		this.setTargetCalories = function* (newTargetCalories) {
-			self.targetCalories = newTargetCalories;
-			yield userMetadataTable.put(self);
-		};
-		this.putMeal = function* (meal) {
-			meal.userID = this.id;
-			yield userDataTable.put(meal);
-		}
-		this.getMeals = promisify(function* () {
-			var params = {
-				KeyConditionExpression: "userID = :hashval", 
-				ExpressionAttributeValues: {
-					":hashval": {
-						N: self.id.toString()
-					}
-				}
-			};
-			var response = yield userDataTable.query(params);
-			return response;
-		});
+	var User = modelFactory("id", {
+		id: "N",
+		targetCalories: "N"
+	}, "calCounterUserMetaData");
+
+	var userMetadataTable = new Table(User);
+	var userDataTable = new Table(exports.Meal);
+
+	User.prototype.setTargetCalories = function* (newTargetCalories) {
+		this.targetCalories = newTargetCalories;
+		yield userMetadataTable.put(this);
+	};
+	User.prototype.putMeal = function* (meal) {
+		meal.userID = this.id;
+		yield userDataTable.put(meal);
 	}
 
-	User.tableName = "calCounterUserMetaData";
-
+	//usually async methods that return a value use a closure to
+	//access `self`, but we moved the closure we need to
+	//`modelFactory`, so we make these functions instead of methods
+	User.getMeals = promisify(function* (id) {
+		var params = {
+			KeyConditionExpression: "userID = :hashval", 
+			ExpressionAttributeValues: {
+				":hashval": {
+					N: id.toString()
+				}
+			}
+		};
+		var response = yield userDataTable.query(params);
+		return response;
+	});
 	User.get = function* (id) {
 		var response = yield userMetadataTable.get((new User({id: id})).getKey());
 		if (response) {
@@ -159,9 +139,6 @@ exports.User = (function() {
 			return user;
 		}
 	};
-
-	var userMetadataTable = new Table(User);
-	var userDataTable = new Table(exports.Meal);
 
 	return User;
 })();
@@ -181,9 +158,6 @@ exports.api = promisify(function *(user, body) {
 			yield* user.putMeal(new exports.Meal(body.upserts[i]));
 		}
 	}
-	var meals = yield user.getMeals();
-	var preserializedMeals = meals.map(function(item) {
-		return item.preserialize()
-	});
-	return {targetCalories: user.targetCalories, meals: preserializedMeals};
+	var meals = yield exports.User.getMeals(user.id);
+	return {targetCalories: user.targetCalories, meals: meals};
 });
