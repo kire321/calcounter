@@ -1,10 +1,13 @@
 var Q = require('q');
 var request = require('request');
 var assert = require('assert');
-var exec = require('child_process').exec
+var exec = require('child_process').exec;
 var execAndWait = Q.denodeify(exec);
-var config = require('./config')
-var promisify = require('./util').promisify
+var config = require('./config');
+var util = require('./util');
+var promisify = util.promisify;
+var randomInt = util.randomInt;
+var Meal = require('./dynamo').Meal;
 
 var server = new function() {
 
@@ -75,20 +78,26 @@ var makeAuthenticatedRequest = promisify(function* (requestBody) {
 	return body;
 });
 
-function randomInt (low, high) {
-    return Math.floor(Math.random() * (high - low) + low);
-}
-
-function* targetCalorieChangesArePersisted() {
+function* canChangeTargetCalories() {
 	var targetCalories = randomInt(1000, 3000);
 	var response = yield makeAuthenticatedRequest({
-		update: {
-			targetCalories: targetCalories
-		}
+		targetCalories: targetCalories
 	});
-	assert.deepEqual(response, {targetCalories: targetCalories});
+	assert.deepEqual(response.targetCalories, targetCalories);
 	response = yield makeAuthenticatedRequest();
-	assert.deepEqual(response, {targetCalories: targetCalories});
+	assert.deepEqual(response.targetCalories, targetCalories);
+}
+
+function* canCreateMeal() {
+	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"foo", calories:1000})).preserialize();
+	var response = yield makeAuthenticatedRequest({
+		upserts: [
+			meal
+		]
+	});
+	assert.deepEqual(response.meals, [meal]);
+	response = yield makeAuthenticatedRequest();
+	assert.deepEqual(response.meals, [meal]);
 }
 
 function* runTests() {
@@ -96,7 +105,8 @@ function* runTests() {
 	var allPassed = true;
 	try {
 		yield* unauthorizedRequestsAreDenied();
-		yield* targetCalorieChangesArePersisted();
+		yield* canChangeTargetCalories();
+		yield* canCreateMeal();
 	} catch (error) {
 		allPassed = false;
 		throw error;
@@ -108,4 +118,5 @@ function* runTests() {
 	}
 }
 
+//Q.spawn(canCreateMeal);
 Q.spawn(runTests);
