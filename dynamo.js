@@ -141,12 +141,42 @@ exports.User = (function() {
 	//usually async methods that return a value use a closure to
 	//access `self`, but we moved the closure we need to
 	//`modelFactory`, so we make these functions instead of methods
-	User.getMeals = promisify(function* (id) {
+	User.getMeals = promisify(function* (id, minDate, maxDate, minTime, maxTime) {
+		if (!minDate) {
+			minDate = 0;
+		}
+		if (!maxDate) {
+			maxDate = 1000000000;
+		}
+		if (!minTime) {
+			minTime = 0;
+		}
+		if (!maxTime) {
+			maxTime = 1000000000;
+		}
 		var params = {
-			KeyConditionExpression: "userID = :hashval", 
+			KeyConditionExpression: "userID = :hashval and #date between :minDate and :maxDate", 
+			IndexName: "date-index",
+			FilterExpression: "#time between :minTime and :maxTime", 
+			ExpressionAttributeNames: {
+				"#date": "date",
+				"#time": "time"
+			},
 			ExpressionAttributeValues: {
 				":hashval": {
 					N: id.toString()
+				},
+				":minDate": {
+					N: minDate.toString()
+				},
+				":maxDate": {
+					N: maxDate.toString()
+				},
+				":minTime": {
+					N: minTime.toString()
+				},
+				":maxTime": {
+					N: maxTime.toString()
 				}
 			}
 		};
@@ -186,6 +216,6 @@ exports.api = promisify(function *(user, body) {
 			yield* user.deleteMeal(body.deletes[i]);
 		}
 	}
-	var meals = yield exports.User.getMeals(user.id);
+	var meals = yield exports.User.getMeals(user.id, body.minDate, body.maxDate, body.minTime, body.maxTime);
 	return {targetCalories: user.targetCalories, meals: meals};
 });

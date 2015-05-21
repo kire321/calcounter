@@ -99,35 +99,61 @@ function* deleteAllMeals() {
 	assert.deepEqual(response.meals, []);
 }
 
-function assertEqualByFields(left, right, fields) {
+function assertMealsEqual(left, right) {
+	var fields = ["mealID", "date", "time", "description", "calories"];
 	fields.forEach(function (field) {
+		if (left[field] !== right[field]) {
+			console.log(left);
+			console.log(right);
+		}
 		assert.deepEqual(left[field], right[field]);
 	});
 }
 
 function* canCreateMeal() {
 	yield* deleteAllMeals();
-	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"foo", calories:1000}));
+	var meal = new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"foo", calories:1000});
 	var response = yield makeAuthenticatedRequest({
 		upserts: [
 			meal
 		]
 	});
-	var fields = ["mealID", "date", "time", "description", "calories"];
-	assertEqualByFields(response.meals[0], meal, fields);
+	assertMealsEqual(response.meals[0], meal);
 	response = yield makeAuthenticatedRequest();
-	assertEqualByFields(response.meals[0], meal, fields);
+	assertMealsEqual(response.meals[0], meal);
 }
 
 function* canStoreEmptyStrings() {
 	yield* deleteAllMeals();
-	var meal = (new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"", calories:1000}));
+	var meal = new Meal({mealID:randomInt(0,10000), date:1, time:1, description:"", calories:1000});
 	var response = yield makeAuthenticatedRequest({
 		upserts: [
 			meal
 		]
 	});
 	assert.equal(response.meals[0].description, meal.description);
+}
+
+function* canFilter() {
+	yield* deleteAllMeals();
+	var meals = [
+		new Meal({mealID:randomInt(0,10000), date:0, time:0, description:"", calories:1000}),
+		new Meal({mealID:randomInt(0,10000), date:1, time:0, description:"", calories:1000}),
+		new Meal({mealID:randomInt(0,10000), date:-1, time:0, description:"", calories:1000}),
+		new Meal({mealID:randomInt(0,10000), date:0, time:-1, description:"", calories:1000}),
+		new Meal({mealID:randomInt(0,10000), date:2, time:0, description:"", calories:1000}),
+		new Meal({mealID:randomInt(0,10000), date:0, time:2, description:"", calories:1000})
+	];
+	var response = yield makeAuthenticatedRequest({
+		upserts: meals,
+		minDate: 0,
+		maxDate: 1,
+		minTime: 0,
+		maxTime: 1
+	});
+	assertMealsEqual(response.meals[0], meals[0]);
+	assertMealsEqual(response.meals[1], meals[1]);
+	assert.equal(response.meals.length, 2);
 }
 
 function* runTests() {
@@ -138,6 +164,7 @@ function* runTests() {
 		yield* canChangeTargetCalories();
 		yield* canCreateMeal();
 		yield* canStoreEmptyStrings();
+		yield* canFilter();
 	} catch (error) {
 		allPassed = false;
 		throw error;

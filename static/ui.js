@@ -13,7 +13,7 @@ var Meal = React.createClass({
 		}
 		return (
 			<div className="meal" key={meal.mealID} style={{'background-color': color}}l>
-				<b> At </b> {time} <b> I ate </b>
+				<b> At </b> {time} (which is day {meal.date} and time {meal.time}) <b> I ate </b>
 				<input type="text" ref="description" name="description" value={meal.description} onChange={this.props.onDescriptionChange} />
 				<b> which had </b>
 				<input type="number" ref="calories" name="calories" value={meal.calories} onChange={this.props.onCaloriesChange} />
@@ -57,6 +57,10 @@ var Content = React.createClass({
 		}
 		this.upserts = {};
 	}
+	body.minDate = this.state.minDate;
+	body.maxDate = this.state.maxDate;
+	body.minTime = this.state.minTime;
+	body.maxTime = this.state.maxTime;
     $.ajax({
       url: 'api',
 	  type: "POST",
@@ -135,16 +139,30 @@ var Content = React.createClass({
 		self.setState(self.state);
 	  };
   },
-  render: function() {
+  onFilterChangeFactory: function(attr) {
 	  var self = this;
-	  var days = {};
-	  this.state.meals.forEach(function(meal) {
-		  if (!days[meal.date]) {
-			  days[meal.date] = 0;
-		  }
-		  days[meal.date] += meal.calories;
-	  });
-	var meals = this.state.meals.map(function (meal) {
+	  return function(event) {
+		  self.state[attr] = event.target.value;
+		  self.setState(self.state);
+	  };
+  },
+  render: function() {
+	var self = this;
+	var days = {};
+	this.state.meals.forEach(function(meal) {
+		if (!days[meal.date]) {
+		  days[meal.date] = 0;
+		}
+		days[meal.date] += meal.calories;
+	});
+	var filteredMeals = this.state.meals.filter(function (meal) {
+		var ok1 = !self.state.minDate || self.state.minDate <= meal.date;
+		var ok2 = !self.state.maxDate || self.state.maxDate >= meal.date;
+		var ok3 = !self.state.minTime || self.state.minTime <= meal.time;
+		var ok4 = !self.state.maxTime || self.state.maxTime >= meal.time;
+		return ok1 && ok2 && ok3 && ok4;
+	});
+	var meals = filteredMeals.map(function (meal) {
 		var onDescriptionChange = self.onChangeFactory(meal, "description");
 		var onCaloriesChange = self.onChangeFactory(meal, "calories");
 		var onDelete = self.onDeleteFactory(meal);
@@ -158,7 +176,12 @@ var Content = React.createClass({
 		  <div className="header">
 			  <div className="targetCalories">
 				  Daily target calories:
-				  <input type="number" ref="targetCalories" name="targetCalories" value={this.state.targetCalories} onChange={this.onTargetCalorieChange} />
+				  <input type="number" value={this.state.targetCalories} onChange={this.onTargetCalorieChange} />
+				  <br /><b>Filters</b>   
+				  &emsp;minimum date: <input type="number" value={this.state.minDate} onChange={this.onFilterChangeFactory("minDate")} />
+				  &emsp;maximum date: <input type="number" value={this.state.maxDate} onChange={this.onFilterChangeFactory("maxDate")} />
+				  &emsp;minimum time: <input type="number" value={this.state.minTime} onChange={this.onFilterChangeFactory("minTime")} />
+				  &emsp;maximum time: <input type="number" value={this.state.maxTime} onChange={this.onFilterChangeFactory("maxTime")} />
 				  <br />
 			  </div>
 			  <button type="button" onClick={this.createMeal}>New Meal</button> 
