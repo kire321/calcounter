@@ -19,6 +19,15 @@ User setting – Expected number of calories per day
 When displayed, it goes green if the total for that day is less than
 expected number of calories per day, otherwise goes red
 
+##Basic use
+
+- `npm install` sets you up with all the dependencies
+- `npm start` starts the server locally, port 8888
+- `npm test` runs tests locally
+- `eb deploy` deploys to http://calcounter-dev.elasticbeanstalk.com/ (you will have to install stuff from AWS and configure
+  credentials and stuff before you can run this)
+
+
 ##Architecture
 
 Basic three tier architecture -- client, webserver, database
