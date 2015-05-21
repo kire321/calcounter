@@ -5,9 +5,14 @@ function randomInt(low, high) {
 var Meal = React.createClass({
 	render: function () {
 		var meal = this.props.meal;
-		var time = (new Date(0, 0, meal.date, 0, 0, meal.time)).toString()
+		//The unix epoch is January 1st, 1970
+		var time = (new Date(1970, 0, meal.date + 1, 0, 0, meal.time)).toString();
+		var color = "#55FF55";
+		if (this.props.tooManyCalories) {
+			color = "#FF5555";
+		}
 		return (
-			<div className="meal" key={meal.mealID}>
+			<div className="meal" key={meal.mealID} style={{'background-color': color}}l>
 				<b> At </b> {time} <b> I ate </b>
 				<input type="text" ref="description" name="description" value={meal.description} onChange={this.props.onDescriptionChange} />
 				<b> which had </b>
@@ -132,12 +137,20 @@ var Content = React.createClass({
   },
   render: function() {
 	  var self = this;
+	  var days = {};
+	  this.state.meals.forEach(function(meal) {
+		  if (!days[meal.date]) {
+			  days[meal.date] = 0;
+		  }
+		  days[meal.date] += meal.calories;
+	  });
 	var meals = this.state.meals.map(function (meal) {
 		var onDescriptionChange = self.onChangeFactory(meal, "description");
 		var onCaloriesChange = self.onChangeFactory(meal, "calories");
 		var onDelete = self.onDeleteFactory(meal);
+		var tooManyCalories = days[meal.date] > self.state.targetCalories;
 		return (
-			<Meal meal={meal} onDescriptionChange={onDescriptionChange} onCaloriesChange={onCaloriesChange} onDelete={onDelete} />
+			<Meal meal={meal} onDescriptionChange={onDescriptionChange} onCaloriesChange={onCaloriesChange} onDelete={onDelete} tooManyCalories={tooManyCalories} />
 			);
 	});
     return (
